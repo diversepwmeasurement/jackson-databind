@@ -1,39 +1,34 @@
-name: Trigger downstream builds
-on:
-  workflow_call:
-    secrets:
-      token:
-        required: true
-
 jobs:
   trigger-dep-build:
     name: Trigger downstream builds
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      name: Repository dispatch
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        client-payload: '{"version": "N/A" }'
+        event-type: jackson-databind-pushed
+        repository: ${{ matrix.repo }}
+        token: ${{ secrets.token }}
+    - continue-on-error: true
+      name: Delay between dispatches
+      run: sleep 10s
+      shell: bash
     strategy:
       fail-fast: false
-      # Won't matter a lot but try to make dispatching non-parallel
-      max-parallel: 1
       matrix:
         repo:
-          - 'FasterXML/jackson-modules-base'
-          - 'FasterXML/jackson-dataformats-binary'
-          - 'FasterXML/jackson-dataformats-text'
-          - 'FasterXML/jackson-dataformat-xml'
-          - 'FasterXML/jackson-datatypes-collections'
-          - 'FasterXML/jackson-datatypes-misc'
-          - 'FasterXML/jackson-module-kotlin'
-          - 'FasterXML/jackson-module-scala'          
-
-    steps:
-      - name: Repository dispatch
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.token }}
-          repository: ${{ matrix.repo }}
-          event-type: jackson-databind-pushed
-          # Could push information on what was built but not yet
-          client-payload: '{"version": "N/A" }'
-      - name: Delay between dispatches
-        run: sleep 10s
-        shell: bash
+        - FasterXML/jackson-modules-base
+        - FasterXML/jackson-dataformats-binary
+        - FasterXML/jackson-dataformats-text
+        - FasterXML/jackson-dataformat-xml
+        - FasterXML/jackson-datatypes-collections
+        - FasterXML/jackson-datatypes-misc
+        - FasterXML/jackson-module-kotlin
+        - FasterXML/jackson-module-scala
+      max-parallel: 1
+name: Trigger downstream builds
+on:
+  repository_dispatch:
+    types: trigger-ga___trigger_dep_builds.yml
